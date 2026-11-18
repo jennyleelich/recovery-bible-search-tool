@@ -1,0 +1,31 @@
+:root{color-scheme:light;--paper:#f7f4eb;--ink:#202b25;--green:#245344;--line:#d9d8cb;--muted:#59665f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px system-ui,sans-serif}
+main{width:min(1200px,100% - 48px);margin:auto;padding:46px 0}
+header{border-bottom:1px solid var(--line);padding-bottom:24px;margin-bottom:24px}
+.edition{font-size:.72rem;font-weight:700;letter-spacing:.16em;color:var(--green)}
+.edition span{margin:0 .2em}
+h1{font:400 clamp(2.25rem,6vw,4.15rem)/1.02 Georgia,serif;margin:.25em 0 .15em;letter-spacing:-.035em}
+header p{margin:0;color:var(--muted);font-size:1.13rem}
+label{display:block;margin-bottom:9px;font-weight:650}
+label span{margin-left:.4em;font-weight:400;color:var(--muted)}
+.input-row{display:flex;gap:8px}
+input,button{font:inherit;border-radius:8px;padding:11px 14px;border:1px solid var(--line)}
+input{width:100%;min-width:0;background:#fffefa;color:var(--ink)}
+button{cursor:pointer;color:white;background:var(--green);border-color:var(--green);white-space:nowrap}
+button:hover{filter:brightness(.9)}
+#topics{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+#topics button{background:transparent;color:var(--green);border-color:var(--line);border-radius:99px;padding:7px 13px;font-size:.9rem}
+#topics button[aria-pressed=true]{background:#dceadf;border-color:#a4bba9}
+#status{margin:12px 0;color:var(--muted);font-size:.88rem;overflow-wrap:anywhere}
+#status.error{color:#9c311a}
+
+#results{display:grid;gap:12px}
+.verse{border:1px solid var(--line);background:#fffefa;border-radius:12px;padding:18px 22px}
+.verse h2{font-size:.92rem;color:var(--green);margin:0 0 9px}
+.verse p{font-size:1rem;line-height:1.65;margin:0}
+.verse p+p{margin-top:6px;color:#4e5b53}
+footer{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:24px}
+a{font-size:.82rem;color:var(--green);text-underline-offset:3px}
+:focus-visible{outline:3px solid #537b68;outline-offset:2px}
+@media(max-width:690px){main{width:calc(100% - 28px);padding:26px 0}.input-row button span{display:none}.verse{padding:14px 16px}}
