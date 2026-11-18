@@ -25,7 +25,9 @@ button:hover{filter:brightness(.9)}
 
 #results{display:grid;gap:12px}
 .verse{border:1px solid var(--line);background:#fffefa;border-radius:12px;padding:18px 22px}
-.verse h2{font-size:.92rem;color:var(--green);margin:0 0 9px}
+.result-group{display:grid;gap:12px}
+.result-group h2{font-size:1.25rem;margin:10px 0 0}
+.verse h3{font-size:.92rem;color:var(--green);margin:0 0 9px}
 .verse p{font-size:1rem;line-height:1.65;margin:0}
 .verse p+p{margin-top:6px;color:#4e5b53}
 footer{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:24px}

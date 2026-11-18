@@ -50,14 +50,16 @@ const input = $("refs");
 const status = $("status");
 const results = $("results");
 const download = $("download");
-const buttons = topics.map(([zh, en, refs], index) => {
+const allTopics = $("all-topics");
+allTopics.addEventListener("click", () => lookup(true));
+const buttons = topics.map(([zh, en, refs]) => {
   const button = document.createElement("button");
   button.type = "button";
   button.textContent = zh + " · " + en;
   button.setAttribute("aria-pressed", "false");
   button.addEventListener("click", () => {
     input.value = refs;
-    lookup(index);
+    lookup();
   });
   $("topics").append(button);
   return button;
@@ -65,33 +67,45 @@ const buttons = topics.map(([zh, en, refs], index) => {
 
 let pending;
 
-function render(verses) {
-  const cards = verses.map(verse => {
-    const card = document.createElement("article");
-    card.className = "verse";
-    const heading = document.createElement("h2");
-    heading.textContent = verse.reference;
-    const zh = document.createElement("p");
-    zh.lang = "zh-Hans";
-    zh.textContent = verse.chinese ?? "未找到中文经文。";
-    const en = document.createElement("p");
-    en.lang = "en";
-    en.textContent = verse.english ?? "English verse unavailable.";
-    card.append(heading, zh, en);
-    return card;
+function render(groups) {
+  const sections = groups.map(({title, verses}) => {
+    const section = document.createElement("section");
+    section.className = "result-group";
+    if (title) {
+      const heading = document.createElement("h2");
+      heading.textContent = title;
+      section.append(heading);
+    }
+    section.append(...verses.map(verse => {
+      const card = document.createElement("article");
+      card.className = "verse";
+      const heading = document.createElement("h3");
+      heading.textContent = verse.reference;
+      const zh = document.createElement("p");
+      zh.lang = "zh-Hans";
+      zh.textContent = verse.chinese ?? "未找到中文经文。";
+      const en = document.createElement("p");
+      en.lang = "en";
+      en.textContent = verse.english ?? "English verse unavailable.";
+      card.append(heading, zh, en);
+      return card;
+    }));
+    return section;
   });
-  results.replaceChildren(...cards);
-  download.disabled = cards.length === 0;
+  results.replaceChildren(...sections);
+  download.disabled = !groups.some(group => group.verses.length);
 }
 
-async function lookup(selected = -1) {
+async function lookup(all = false) {
   pending?.abort();
   const lookupRequest = new AbortController();
   pending = lookupRequest;
   const typed = input.value.trim();
   const match = topics.findIndex(([zh, en, refs]) => [zh, en, refs].some(item => topicKey(item) === topicKey(typed)));
-  if (selected < 0) selected = match;
-  if (match >= 0) input.value = topics[match][2];
+  const selected = all ? -1 : match;
+  if (selected >= 0) input.value = topics[selected][2];
+  if (all) input.value = "";
+  allTopics.setAttribute("aria-pressed", String(all));
   buttons.forEach((button, index) => button.setAttribute("aria-pressed", String(index === selected)));
   download.disabled = true;
   results.replaceChildren();
@@ -99,11 +113,15 @@ async function lookup(selected = -1) {
   status.className = "";
   status.textContent = "正在查找经文… / Looking up verses…";
   try {
-    const passages = parse(input.value);
-    if (!passages.length) throw Error("请输入经文出处。");
-    const ids = [...new Set(passages.flatMap(({book, chapter, first, last}) =>
-      Array.from({length:last-first+1}, (_, offset) => [book+1, chapter, first+offset].join("."))
-    ))];
+    const searches = all ? topics : [topics[selected] ?? ["", "", input.value]];
+    const groups = searches.map(([zh, en, refs]) => ({
+      title: zh ? zh + " · " + en : "",
+      ids: [...new Set(parse(refs).flatMap(({book, chapter, first, last}) =>
+        Array.from({length:last-first+1}, (_, offset) => [book+1, chapter, first+offset].join("."))
+      ))]
+    }));
+    const ids = [...new Set(groups.flatMap(group => group.ids))];
+    if (!ids.length) throw Error("请输入经文出处。");
     if (ids.length > 100) throw Error("每次最多查询 100 节。 / Limit 100 verses per search.");
     const response = await fetch("/api/verses?" + new URLSearchParams({ids:ids.join(",")}), {signal:lookupRequest.signal});
     const data = await response.json();
@@ -113,7 +131,8 @@ async function lookup(selected = -1) {
       const [book, chapter, number] = ids[index].split(".").map(Number);
       return {...verse, reference: simplified[book-1] + " " + chapter + ":" + number + " · " + english[book-1] + " " + chapter + ":" + number};
     });
-    render(verses);
+    const byId = new Map(ids.map((id, index) => [id, verses[index]]));
+    render(groups.map(group => ({title:group.title, verses:group.ids.map(id => byId.get(id))})));
     const paired = verses.filter(verse => verse.chinese && verse.english).length;
     status.textContent = paired === verses.length
       ? paired + " 节中英对照 · " + paired + " paired verses"
@@ -129,14 +148,21 @@ async function lookup(selected = -1) {
 
 download.addEventListener("click", () => {
   if (download.disabled) return;
-  const blocks = Array.from(results.children, card =>
-    Array.from(card.children, line => line.textContent).join("\r\n")
-  );
+  const blocks = Array.from(results.children, group => {
+    const title = group.querySelector("h2")?.textContent;
+    const verses = Array.from(group.querySelectorAll(".verse"), card =>
+      Array.from(card.children, line => line.textContent).join("\r\n")
+    );
+    if (title) verses.unshift(title + "\r\n" + "=".repeat(32));
+    return verses.join("\r\n\r\n");
+  });
   const file = new Blob(["\uFEFF", blocks.join("\r\n\r\n"), "\r\n"], {type: "text/plain;charset=utf-8"});
   const link = document.createElement("a");
   const url = URL.createObjectURL(file);
   link.href = url;
-  link.download = "recovery-verses.txt";
+  link.download = allTopics.getAttribute("aria-pressed") === "true"
+    ? "recovery-verses-all-topics.txt"
+    : "recovery-verses.txt";
   document.body.append(link);
   link.click();
   link.remove();
