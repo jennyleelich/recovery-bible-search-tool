@@ -17,7 +17,10 @@ button:hover{filter:brightness(.9)}
 #topics{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
 #topics button{background:transparent;color:var(--green);border-color:var(--line);border-radius:99px;padding:7px 13px;font-size:.9rem}
 #topics button[aria-pressed=true]{background:#dceadf;border-color:#a4bba9}
-#status{margin:12px 0;color:var(--muted);font-size:.88rem;overflow-wrap:anywhere}
+.result-actions{display:flex;align-items:center;flex-wrap:wrap;justify-content:space-between;gap:8px;margin:12px 0}
+#download{font-size:.88rem;padding:7px 13px}
+#download:disabled{opacity:.55;cursor:default;filter:none}
+#status{margin:0;color:var(--muted);font-size:.88rem;overflow-wrap:anywhere}
 #status.error{color:#9c311a}
 
 #results{display:grid;gap:12px}

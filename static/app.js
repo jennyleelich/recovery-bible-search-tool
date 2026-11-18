@@ -48,6 +48,8 @@ function parse(input) {
 const $ = id => document.getElementById(id);
 const input = $("refs");
 const status = $("status");
+const results = $("results");
+const download = $("download");
 const buttons = topics.map(([zh, en, refs], index) => {
   const button = document.createElement("button");
   button.type = "button";
@@ -78,7 +80,8 @@ function render(verses) {
     card.append(heading, zh, en);
     return card;
   });
-  $("results").replaceChildren(...cards);
+  results.replaceChildren(...cards);
+  download.disabled = cards.length === 0;
 }
 
 async function lookup(selected = -1) {
@@ -90,8 +93,9 @@ async function lookup(selected = -1) {
   if (selected < 0) selected = match;
   if (match >= 0) input.value = topics[match][2];
   buttons.forEach((button, index) => button.setAttribute("aria-pressed", String(index === selected)));
-  $("results").replaceChildren();
-  $("results").setAttribute("aria-busy", "true");
+  download.disabled = true;
+  results.replaceChildren();
+  results.setAttribute("aria-busy", "true");
   status.className = "";
   status.textContent = "正在查找经文… / Looking up verses…";
   try {
@@ -119,9 +123,25 @@ async function lookup(selected = -1) {
     status.className = "error";
     status.textContent = "查询失败 / Lookup failed · " + error.message;
   } finally {
-    if (!lookupRequest.signal.aborted) $("results").setAttribute("aria-busy", "false");
+    if (!lookupRequest.signal.aborted) results.setAttribute("aria-busy", "false");
   }
 }
+
+download.addEventListener("click", () => {
+  if (download.disabled) return;
+  const blocks = Array.from(results.children, card =>
+    Array.from(card.children, line => line.textContent).join("\r\n")
+  );
+  const file = new Blob(["\uFEFF", blocks.join("\r\n\r\n"), "\r\n"], {type: "text/plain;charset=utf-8"});
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(file);
+  link.href = url;
+  link.download = "recovery-verses.txt";
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
 
 $("lookup").addEventListener("submit", event => {
   event.preventDefault();
